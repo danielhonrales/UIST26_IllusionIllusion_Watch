@@ -1,0 +1,30 @@
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ✅ Required Permissions -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ✅ Declare this is a Wear OS app -->
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <application>
+        <!-- ✅ Required for Wear OS standalone app -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
+        <!-- Option B: UnityPlayerGameActivity (keep if using GameActivity entry point) -->
+        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
+                  android:theme="@style/BaseUnityGameActivityTheme"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="android.app.lib_name" android:value="game" />
+        </activity>
+
+    </application>
+</manifest>

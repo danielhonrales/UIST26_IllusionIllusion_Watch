@@ -2,40 +2,54 @@ using UnityEngine;
 
 public class HapticManager : MonoBehaviour
 {
-    private AndroidJavaClass unityPlayer;
-    private AndroidJavaObject currentActivity;
-    private AndroidJavaObject vibratorService;
+    private AndroidJavaObject vibrator;
 
     void Start()
     {
-        unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-        currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-
-        AndroidJavaObject context = currentActivity.Call<AndroidJavaObject>("getApplicationContext");
-        AndroidJavaClass contextClass = new AndroidJavaClass("android.content.Context");
-        string vibratorServiceName = contextClass.GetStatic<string>("VIBRATOR_SERVICE");
-
-        vibratorService = context.Call<AndroidJavaObject>("getSystemService", vibratorServiceName);
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            vibrator = activity.Call<AndroidJavaObject>("getSystemService", "vibrator");
+        }
     }
 
+    // Simple pulse
     public void Vibrate(long milliseconds)
     {
-        if (vibratorService != null)
-        {
-            vibratorService.Call("vibrate", milliseconds);
-        }
+        vibrator?.Call("vibrate", milliseconds);
     }
 
-    public void VibratePattern(long[] pattern)
+    // Custom pattern: [delay, on, off, on, off...]
+    public void VibratePattern(long[] pattern, int repeat = -1)
     {
-        if (vibratorService != null)
-        {
-            vibratorService.Call("vibrate", pattern, -1);
-        }
+        vibrator?.Call("vibrate", pattern, repeat);
+    }
+
+    // Waveform with amplitude (API 26+)
+    public void VibrateWaveform(long[] timings, int[] amplitudes)
+    {
+        using var effectClass = new AndroidJavaClass("android.os.VibrationEffect");
+        var effect = effectClass.CallStatic<AndroidJavaObject>(
+            "createWaveform", timings, amplitudes, -1
+        );
+        vibrator?.Call("vibrate", effect);
+    }
+
+    // Predefined effects (click, tick, etc.)
+    public void VibratePredefined(int effectId)
+    {
+        // effectId: 0=TICK, 1=CLICK, 2=HEAVY_CLICK, 3=DOUBLE_CLICK
+        using var effectClass = new AndroidJavaClass("android.os.VibrationEffect");
+        var effect = effectClass.CallStatic<AndroidJavaObject>(
+            "createPredefined", effectId
+        );
+        vibrator?.Call("vibrate", effect);
     }
 
     public void Thing()
     {
+        Debug.Log("bruh");
         Vibrate(1000);
     }
 }
