@@ -176,6 +176,36 @@ public class HapticManager : MonoBehaviour
         SendWatchCommands(pattern.startTime, watchCommands);
     }
 
+    public void Incoming()
+    {
+        
+    }
+
+    public void Mad()
+    {
+        
+    }
+
+    public void Happy()
+    {
+        
+    }
+
+    public void Rain()
+    {
+        
+    }
+
+    public void Hot()
+    {
+        
+    }
+
+    public void Alarm()
+    {
+        
+    }
+
     public void SendWatchCommands(long startTime, List<WatchCommand> commands)
     {
         foreach (var cmd in commands)
