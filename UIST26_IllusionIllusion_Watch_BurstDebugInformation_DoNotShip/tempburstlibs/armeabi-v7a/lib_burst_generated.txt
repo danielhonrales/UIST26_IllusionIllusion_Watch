@@ -10,6 +10,7 @@ Library: D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\BurstOutput\tempbur
 --target-framework=NetFramework
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\Burst
+--debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.0.60f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Library\Burst
 --output=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\BurstOutput\tempburstlibs\armeabi-v7a\lib_burst_generated
@@ -126,6 +127,7 @@ Library: D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\BurstOutput\tempbur
 --target-framework=NetFramework
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\Burst
+--debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.0.60f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Library\Burst
 --output=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\BurstOutput\tempburstlibs\armeabi-v7a\lib_burst_generated
@@ -154,6 +156,7 @@ Library: D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\BurstOutput\tempbur
 --float-mode=Fast
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\Burst
+--debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/6000.0.60f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Library\Burst
 --output=D:\UnityProjects\UIST26_IllusionIllusion_Watch\Temp\BurstOutput\tempburstlibs\armeabi-v7a\lib_burst_generated
