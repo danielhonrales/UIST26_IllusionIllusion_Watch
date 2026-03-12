@@ -9,7 +9,10 @@ public class InteractionManager : MonoBehaviour
 
     [Header("Bruh")]
     public DialManager dialManager;
+    public HapticManager hapticManager;
     public Image background;
+    public Image clockFace;
+    public bool dialActive = false;
 
     [Space(10)]
     [Header("Start")]
@@ -23,11 +26,17 @@ public class InteractionManager : MonoBehaviour
     [Header("Weather")]
     public GameObject weatherUI;
     public List<GameObject> forecasts;
-    public bool _weatherDialActive = false;
 
     [Space(10)]
     [Header("Breathing")]
     public GameObject breathingUI;
+
+    [Space(10)]
+    [Header("Phone")]
+    public GameObject phoneUI;
+    public List<GameObject> emotes;
+    public bool readyToSend = false;
+
     
 
     void Start()
@@ -48,7 +57,7 @@ public class InteractionManager : MonoBehaviour
     {
         startUI.SetActive(false);
         greetingsUI.SetActive(true);
-        yield return new WaitForSeconds(2);
+        yield return new WaitForSeconds(1.5f);
         greetingsUI.transform.Find("GoodMorning").gameObject.SetActive(true);
         // haptic effect
         yield return new WaitForSeconds(2.5f);
@@ -92,46 +101,83 @@ public class InteractionManager : MonoBehaviour
 
         // Forecasts
         float dialCooldown = 5f;
-        float lastDialTime = -dialCooldown;
-        _weatherDialActive = true;
+        bool dialReady = true;
+        dialActive = true;
         int currentForecastIndex = 0;
 
-        while (_weatherDialActive)
+        while (dialActive)
         {
             float delta = dialManager.lastDelta;
+            dialManager.lastDelta = 0f;
 
-            if (Mathf.Abs(delta) > 0.01f && Time.time - lastDialTime >= dialCooldown)
+            if (dialReady && Mathf.Abs(delta) > 0.5f)
             {
-                lastDialTime = Time.time;
+                dialReady = false;
                 weatherUI.transform.Find("SpinControl").gameObject.SetActive(true);
 
-                if (delta > 0)
+                if (delta < 0)
                 {
                     // ── Clockwise ──────────────────────────────
                     int nextIndex = Mathf.Min(currentForecastIndex + 1, forecasts.Count - 1);
-                    SetForecast(currentForecastIndex, nextIndex);
+                    StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
                     currentForecastIndex = nextIndex;
-
                 }
                 else
                 {
                     // ── Counter-clockwise ──────────────────────
                     int nextIndex = Mathf.Max(currentForecastIndex - 1, 0);
-                    SetForecast(currentForecastIndex, nextIndex);
+                    StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
                     currentForecastIndex = nextIndex;
-
                 }
+
+                // Cooldown: flush delta then re-enable after delay
+                StartCoroutine(ReenableDial(dialCooldown, () =>
+                {
+                    dialManager.lastDelta = 0f; // discard any input during cooldown
+                    dialReady = true;
+                }));
+            } else if (Input.GetKey(KeyCode.R))
+            {
+                int nextIndex = Mathf.Min(currentForecastIndex + 1, forecasts.Count - 1);
+                StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
+                currentForecastIndex = nextIndex;
+
+                StartCoroutine(ReenableDial(dialCooldown, () =>
+                {
+                    dialManager.lastDelta = 0f; // discard any input during cooldown
+                    dialReady = true;
+                }));
+            } else if (Input.GetKey(KeyCode.T)){
+                int nextIndex = Mathf.Max(currentForecastIndex - 1, 0);
+                StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
+                currentForecastIndex = nextIndex;
+
+                StartCoroutine(ReenableDial(dialCooldown, () =>
+                {
+                    dialManager.lastDelta = 0f; // discard any input during cooldown
+                    dialReady = true;
+                }));
             }
 
-            yield return null;
+            yield return new WaitForSeconds(0.1f);
         }
     }
 
-    void SetForecast(int currentIndex, int nextIndex)
+    IEnumerator ReenableDial(float delay, System.Action onComplete)
     {
-        if (currentIndex == nextIndex) return; // already at boundary
+        yield return new WaitForSeconds(delay);
+        onComplete?.Invoke();
+    }
+
+    IEnumerator SetForecast(int currentIndex, int nextIndex)
+    {
+        if (currentIndex == nextIndex) {
+            // haptic effect
+            StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
+            StartCoroutine(GradualColorChange(background, Color.black, 0.3f));
+            yield return null; // already at boundary
+        }
         forecasts[currentIndex].SetActive(false);
-        forecasts[nextIndex].SetActive(true);
 
         // maybe fade in
         if (nextIndex == 0 )
@@ -158,11 +204,17 @@ public class InteractionManager : MonoBehaviour
             StartCoroutine(GradualColorChange(background, Color.black, 1));
         }
 
+        yield return new WaitForSeconds(1);
+        forecasts[nextIndex].SetActive(true);
     }
 
     public void ResetWeather()
     {
-        _weatherDialActive = false;
+        dialActive = false;
+        foreach (GameObject forecast in forecasts)
+        {
+            forecast.SetActive(true);
+        }
         weatherUI.transform.Find("Intro").gameObject.SetActive(false);
         weatherUI.transform.Find("Intro").Find("SpinArrow").gameObject.SetActive(false);
         weatherUI.transform.Find("SpinControl").gameObject.SetActive(false);
@@ -181,27 +233,235 @@ public class InteractionManager : MonoBehaviour
 
     public IEnumerator BreathingHelper()
     {
+        yield return new WaitForSeconds(1);
         breathingUI.SetActive(true);
         yield return new WaitForSeconds(1);
 
         // Intro
         breathingUI.transform.Find("Intro").gameObject.SetActive(true);
-        yield return new WaitForSeconds(5f);
+        yield return new WaitForSeconds(3f);
         breathingUI.transform.Find("Intro").gameObject.SetActive(false);
 
         // Breathing exercise
-        breathingUI.transform.Find("Exercise").gameObject.SetActive(true);
+        ParticleSystem psIn = breathingUI.transform.Find("Exercise").Find("BreatheIn").GetComponent<ParticleSystem>();
+        ParticleSystem psOut = breathingUI.transform.Find("Exercise").Find("BreatheOut").GetComponent<ParticleSystem>();
+        for (int i = 0; i < 3; i++)
+        {
+            hapticManager.Breathing();
+            yield return new WaitForSeconds(2f);
+            psIn.Play();
+            yield return new WaitForSeconds(4.5f);
+
+            if (i != 2) {
+                psOut.Play();
+                yield return new WaitForSeconds(4f);
+
+                yield return new WaitForSeconds(1);
+            }
+        }
+
+        ResetBreathing();
+    }
+
+    public void ResetBreathing()
+    {
+        breathingUI.SetActive(false);
+        Phone();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public void Phone()
+    {
+        StartCoroutine(PhoneHelper());
+    }
+
+    public IEnumerator PhoneHelper()
+    {
+        // Call
+        clockFace.gameObject.SetActive(false);
+        phoneUI.SetActive(true);
+        phoneUI.transform.Find("Call").gameObject.SetActive(true);
+        StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
+        StartCoroutine(Wiggle(phoneUI.transform.Find("Call").Find("Image").gameObject.GetComponent<RectTransform>(), 5f, 20f, 4f));
+        // haptic effect
+        yield return new WaitForSeconds(4);
+
+        // Response
+        StartCoroutine(GradualColorChange(background, Color.black, 0.3f));
+        phoneUI.transform.Find("Call").gameObject.SetActive(false);
+        phoneUI.transform.Find("Response").gameObject.SetActive(true);
+        yield return new WaitForSeconds(3);
+        phoneUI.transform.Find("Response").Find("Intro").gameObject.SetActive(false);
+        phoneUI.transform.Find("Controls").gameObject.SetActive(true);
+
+        int currentEmoteIndex = 0;
+        SetEmote(currentEmoteIndex);
+        int thermalVal = 0;
+
+        Vector2 touchStartPos = Vector2.zero;
+        bool isSwiping = false;
+        float swipeThreshold = 5f;
+
+        dialActive = true;
+        float dialCooldown = 3f;
+        bool dialReady = true;
+
+        while (dialActive)
+        {
+            // ── Touch/Swipe Detection ──────────────────────────
+            if (Input.touchCount > 0)
+            {
+                Touch touch = Input.GetTouch(0);
+
+                if (touch.phase == TouchPhase.Began)
+                {
+                    touchStartPos = touch.position;
+                    isSwiping = true;
+                }
+                else if (touch.phase == TouchPhase.Ended && isSwiping)
+                {
+                    Vector2 swipeDelta = touch.position - touchStartPos;
+                    isSwiping = false;
+
+                    if (Mathf.Abs(swipeDelta.y) > swipeThreshold)
+                    {
+                        if (swipeDelta.y > 0)
+                        {
+                            currentEmoteIndex = (currentEmoteIndex + 1) % emotes.Count;
+                            SetEmote(currentEmoteIndex);
+                            readyToSend = true;
+                        }
+                        else
+                        {
+                            currentEmoteIndex = (currentEmoteIndex - 1 + emotes.Count) % emotes.Count;
+                            SetEmote(currentEmoteIndex);
+                            readyToSend = true;
+                        }
+                    }
+                }else if (touch.phase == TouchPhase.Canceled)
+                {
+                    isSwiping = false;
+                }
+            }
+
+            // ── Dial Detection ────────────────────────────────
+            float delta = dialManager.lastDelta;
+            dialManager.lastDelta = 0f;
+
+            if (dialReady && (Mathf.Abs(delta) > 0.5f || Input.GetKeyDown(KeyCode.T)))
+            {
+                dialReady = false;
+
+                if (delta < 0 || Input.GetKeyDown(KeyCode.T))
+                {
+                    // ── Clockwise ──────────────────────────────
+                    thermalVal = Mathf.Min(thermalVal + 1, 3);
+                    Debug.Log($"Thermal: {thermalVal}");
+                    readyToSend = true;
+                }
+                else
+                {
+                    // ── Counter-clockwise ──────────────────────
+                    thermalVal = Mathf.Max(thermalVal - 1, -3);
+                    Debug.Log($"Thermal: {thermalVal}");
+                    readyToSend = true;
+                }
+
+                UpdateThermalBackground(thermalVal);
+                // haptic effect
+
+                StartCoroutine(ReenableDial(dialCooldown, () =>
+                {
+                    dialManager.lastDelta = 0f;
+                    dialReady = true;
+                }));
+            }
+
+            yield return null;
+        }
+    }
+
+    IEnumerator Wiggle(RectTransform rect, float angle = 15f, float speed = 20f, float duration = 1f)
+    {
+        float elapsed = 0f;
+        Quaternion startRotation = rect.localRotation;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float z = Mathf.Sin(elapsed * speed) * angle;
+            rect.localRotation = startRotation * Quaternion.Euler(0f, 0f, z);
+            yield return null;
+        }
+
+        rect.localRotation = startRotation;
+    }
+
+    void SetEmote(int index)
+    {
+        for (int i = 0; i < emotes.Count; i++)
+            emotes[i].SetActive(i == index);
+    }
+
+    void UpdateThermalBackground(int thermalVal)
+    {
+        Color targetColor;
+
+        if (thermalVal >= 0)
+        {
+            // neutral → hot (white → red)
+            targetColor = Color.Lerp(Color.black, Color.red, thermalVal / 3f);
+        }
+        else
+        {
+            // cold → neutral (blue → white)
+            targetColor = Color.Lerp(Color.blue, Color.black, (thermalVal + 3f) / 3f);
+        }
+
+        StartCoroutine(GradualColorChange(background, targetColor, 0.5f));
+    }
+
+    public void OnBackButton(string state)
+    {
+        if (state == "down" && readyToSend)
+        {
+            readyToSend = false;
+            StartCoroutine(Send());
+        }
+    }
+
+    public void OnHomeButton(string state)
+    {
+        if (state == "down")
+            Debug.Log("Home button pressed");
+    }
+
+    public IEnumerator Send()
+    {
+        dialActive = false;
+        phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(true);
+        // haptic effect
+        yield return new WaitForSeconds(5);
+        ResetPhone();
+    }
+
+    public void ResetPhone()
+    {
+        phoneUI.SetActive(false);
+        SetEmote(-1);
+        phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(false);
+        phoneUI.transform.Find("Controls").gameObject.SetActive(false);
+        clockFace.gameObject.SetActive(true);
+        StartCoroutine(GradualColorChange(background, Color.black, 0.5f));
+        startUI.SetActive(true);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void OnIntensityChanged(float value)
     {
         int intensity = Mathf.RoundToInt(value * 255f);
-        background.color = new Color(intensity, 0, 0, 1);
         Debug.Log($"Haptic intensity: {intensity}");
-
-        // Feed into your VibrateRamp
-        
     }
 
     void OnDirectionChanged(string direction)

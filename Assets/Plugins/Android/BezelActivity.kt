@@ -2,6 +2,7 @@ package com.yourcompany.hapticwatch
 
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.KeyEvent
 import com.unity3d.player.UnityPlayer
 import com.unity3d.player.UnityPlayerGameActivity
 
@@ -49,4 +50,29 @@ class BezelActivity : UnityPlayerGameActivity() {
     fun getTotalAccumulated(): Float = synchronized(lock) { totalAccumulated }
 
     fun resetAccumulated() = synchronized(lock) { totalAccumulated = 0f }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    return when (keyCode) {
+        KeyEvent.KEYCODE_BACK -> {
+            UnityPlayer.UnitySendMessage("RoutineUI", "OnBackButton", "down")
+            true // true = consumed, won't trigger default back behavior
+        }
+        KeyEvent.KEYCODE_STEM_1 -> {
+            // Bottom home button (single press - may be intercepted by OS)
+            UnityPlayer.UnitySendMessage("RoutineUI", "OnHomeButton", "down")
+            true
+        }
+        else -> super.onKeyDown(keyCode, event)
+    }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_BACK -> {
+                UnityPlayer.UnitySendMessage("RoutineUI", "OnBackButton", "up")
+                true
+            }
+            else -> super.onKeyUp(keyCode, event)
+        }
+    }   
 }
