@@ -1,25 +1,19 @@
 fileFormatVersion: 2
-guid: 5a9e2cb21c45e714d8f5682c35a8f84b
+guid: ee5161149ba07f84da94a9639cc43249
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6830152201372448578
-    second: rain_0
+      213: 4307670966044113779
+    second: windy_0
   - first:
-      213: 1930509181563307035
-    second: rain_1
+      213: 1010919574888596455
+    second: windy_1
   - first:
-      213: 6392598546916008928
-    second: rain_2
+      213: 121913478447718105
+    second: windy_2
   - first:
-      213: -956267069197601943
-    second: rain_3
-  - first:
-      213: 5125793485215207500
-    second: rain_4
-  - first:
-      213: 4670218420249728603
-    second: rain_5
+      213: -5095175662401718726
+    second: windy_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -111,17 +105,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: rain_0
+      name: windy_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 201
-        width: 512
-        height: 308
+        x: 31
+        y: 287
+        width: 66
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -130,20 +137,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: eb8c753b2cc6631a0800000000000000
-      internalID: -6830152201372448578
+      spriteID: 37bb25cabebe7cb30800000000000000
+      internalID: 4307670966044113779
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: rain_1
+      name: windy_1
       rect:
         serializedVersion: 2
-        x: 74
-        y: 101
-        width: 64
-        height: 83
+        x: 111
+        y: 287
+        width: 274
+        height: 130
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -152,20 +159,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b1406b25fdb8aca10800000000000000
-      internalID: 1930509181563307035
+      spriteID: 7e349bd4ff1870e00800000000000000
+      internalID: 1010919574888596455
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: rain_2
+      name: windy_2
       rect:
         serializedVersion: 2
-        x: 224
-        y: 101
-        width: 64
-        height: 83
+        x: 31
+        y: 143
+        width: 450
+        height: 130
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -174,20 +181,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0e36b9c428217b850800000000000000
-      internalID: 6392598546916008928
+      spriteID: 9de5538a9af11b100800000000000000
+      internalID: 121913478447718105
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: rain_3
+      name: windy_3
       rect:
         serializedVersion: 2
-        x: 374
-        y: 101
-        width: 64
-        height: 83
+        x: 111
+        y: 95
+        width: 226
+        height: 130
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -196,52 +203,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 963b216ca28aab2f0800000000000000
-      internalID: -956267069197601943
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: rain_4
-      rect:
-        serializedVersion: 2
-        x: 149
-        y: 3
-        width: 64
-        height: 83
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c409346640a722740800000000000000
-      internalID: 5125793485215207500
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: rain_5
-      rect:
-        serializedVersion: 2
-        x: 299
-        y: 3
-        width: 64
-        height: 83
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b56987ac8e2ffc040800000000000000
-      internalID: 4670218420249728603
+      spriteID: a36745efabc4a49b0800000000000000
+      internalID: -5095175662401718726
       vertices: []
       indices: 
       edges: []
@@ -260,12 +223,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      rain_0: -6830152201372448578
-      rain_1: 1930509181563307035
-      rain_2: 6392598546916008928
-      rain_3: -956267069197601943
-      rain_4: 5125793485215207500
-      rain_5: 4670218420249728603
+      windy_0: 4307670966044113779
+      windy_1: 1010919574888596455
+      windy_2: 121913478447718105
+      windy_3: -5095175662401718726
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

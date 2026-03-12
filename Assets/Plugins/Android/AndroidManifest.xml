@@ -8,23 +8,28 @@
     <!-- ✅ Declare this is a Wear OS app -->
     <uses-feature android:name="android.hardware.type.watch" />
 
+    <!-- ✅ Rotary/bezel input feature -->
+    <uses-feature
+        android:name="android.hardware.input.rotary"
+        android:required="false" />
+
     <application>
         <!-- ✅ Required for Wear OS standalone app -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
-        <!-- Option B: UnityPlayerGameActivity (keep if using GameActivity entry point) -->
-        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
-                  android:theme="@style/BaseUnityGameActivityTheme"
-                  android:exported="true">
+        <activity android:name="com.yourcompany.hapticwatch.BezelActivity"
+                android:theme="@style/BaseUnityGameActivityTheme"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
             <meta-data android:name="android.app.lib_name" android:value="game" />
-        </activity>
+            <meta-data android:name="dialer_rotary_input" android:value="true" />
+    </activity>
 
     </application>
 </manifest>

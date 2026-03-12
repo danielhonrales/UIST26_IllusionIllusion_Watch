@@ -64,6 +64,8 @@ public class ToolTCP : MonoBehaviour
                 Debug.Log("Connected to suite");
                 button.image.color = Color.green;
                 //button.interactable = false;
+
+                SendMessageToPi(System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() + "$");
             }
             catch (SocketException e)
             {

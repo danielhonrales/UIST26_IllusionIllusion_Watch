@@ -35,6 +35,7 @@ public class NotificationsManager : MonoBehaviour
     
     [Header("Alarm")]
     public TMP_Text countdown;
+    public Button alarmButton;
     
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -88,6 +89,7 @@ public class NotificationsManager : MonoBehaviour
 
     public IEnumerator MadHelper()
     {
+
         for (int i = 0; i < 3; i++)
         {
             dots.text = ".";
@@ -96,13 +98,17 @@ public class NotificationsManager : MonoBehaviour
             yield return new WaitForSeconds(0.4f);
             dots.text = "...";
             yield return new WaitForSeconds(0.4f);
+            if (i == 0)
+            {
+                hapticManager.Mad();
+            }
         }
         dots.text = "";
 
         mad.SetActive(true);
         neutralBackground.SetActive(false);
         madBackground.SetActive(true);
-        hapticManager.Mad();
+        ;
         yield return new WaitForSeconds(3);
 
         mad.SetActive(false);
@@ -120,6 +126,7 @@ public class NotificationsManager : MonoBehaviour
 
     public IEnumerator HappyHelper()
     {
+        
         for (int i = 0; i < 3; i++)
         {
             dots.text = ".";
@@ -128,15 +135,19 @@ public class NotificationsManager : MonoBehaviour
             yield return new WaitForSeconds(0.4f);
             dots.text = "...";
             yield return new WaitForSeconds(0.4f);
+            if (i == 0)
+            {
+                hapticManager.Happy();
+            }
         }
         dots.text = "";
 
         happy.SetActive(true);
+        
         neutralBackground.SetActive(false);
         happyBackground.SetActive(true);
-        hapticManager.Mad();
+        
         yield return new WaitForSeconds(3);
-
         happy.SetActive(false);
         neutralBackground.SetActive(true);
         happyBackground.SetActive(false);
@@ -147,24 +158,26 @@ public class NotificationsManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
         Coroutine helper = StartCoroutine(WeatherHelper());
-        
+
+        hapticManager.Hot();
         yield return new WaitForSeconds(2);
 
         hot.SetActive(true);
-        hapticManager.Hot();
+        
         yield return new WaitForSeconds(2);
+        hapticManager.Rain();
         yield return new WaitForSeconds(1);
         hot.SetActive(false);
 
         yield return new WaitForSeconds(0.75f);
 
         rain.SetActive(true);
-        hapticManager.Rain();
+        //hapticManager.Rain();
         yield return new WaitForSeconds(3);
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(2);
         rain.SetActive(false);
 
-        yield return new WaitForSeconds(0.75f);
+        yield return new WaitForSeconds(2f);
         StopCoroutine(helper);
         OpenAppMenu();
     }
@@ -190,24 +203,28 @@ public class NotificationsManager : MonoBehaviour
 
     public void Alarm()
     {
+        alarmButton.enabled = false;
         Coroutine helper = StartCoroutine(AlarmHelper());
     }
 
     public IEnumerator AlarmHelper()
     {
-        countdown.text = string.Format("00:10");
-        yield return new WaitForSeconds(1);
-        for (int i = 9; i > -1; i--)
+        for (int i = 5; i > -1; i--)
         {
             countdown.text = string.Format("00:0{0}", i);
+            if (i == 2) {
+                hapticManager.Alarm();
+            }
             if (i != 0) {
                 yield return new WaitForSeconds(1);
             }
         }
 
         countdown.color = Color.red;
-        hapticManager.Alarm();
+        
         yield return new WaitForSeconds(4);
+        countdown.color = Color.white;
+        alarmButton.enabled = true;
         OpenAppMenu();
     }
 

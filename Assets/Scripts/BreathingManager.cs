@@ -36,11 +36,12 @@ public class BreathingManager : MonoBehaviour
         hapticManager.Breathing();
         yield return new WaitForSeconds(2f);
         psIn.Play();
-        yield return new WaitForSeconds(6f);
+        yield return new WaitForSeconds(4.5f);
         psOut.Play();
         yield return new WaitForSeconds(4f);
 
-        //yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(1);
         breathingTask = StartCoroutine(BreathingTask());
+        
     }
 }
