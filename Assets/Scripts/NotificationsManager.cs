@@ -100,7 +100,7 @@ public class NotificationsManager : MonoBehaviour
             yield return new WaitForSeconds(0.4f);
             if (i == 0)
             {
-                hapticManager.Mad();
+                //hapticManager.Mad();
             }
         }
         dots.text = "";
@@ -137,7 +137,7 @@ public class NotificationsManager : MonoBehaviour
             yield return new WaitForSeconds(0.4f);
             if (i == 0)
             {
-                hapticManager.Happy();
+                //hapticManager.Happy();
             }
         }
         dots.text = "";

@@ -26,6 +26,7 @@ public class InteractionManager : MonoBehaviour
     [Header("Weather")]
     public GameObject weatherUI;
     public List<GameObject> forecasts;
+    public int lastIndex;
 
     [Space(10)]
     [Header("Breathing")]
@@ -36,7 +37,7 @@ public class InteractionManager : MonoBehaviour
     public GameObject phoneUI;
     public List<GameObject> emotes;
     public int emoteIndex;
-    public int thermalLevels = 5;
+    public int emoteLevels = 3;
     public bool readyToSend = false;
 
     
@@ -64,7 +65,7 @@ public class InteractionManager : MonoBehaviour
         hapticManager.GoodMorning();
 
         
-        yield return new WaitForSeconds(2.5f);
+        yield return new WaitForSeconds(1.5f);
         hapticManager.LetsGetReady();
         StartCoroutine(GradualColorChange(background, new Color(38 / 255f, 99 / 255f, 125 / 255f), 3));
         yield return new WaitForSeconds(.5f);
@@ -105,7 +106,7 @@ public class InteractionManager : MonoBehaviour
         
 
         // Forecasts
-        float dialCooldown = .5f;
+        float dialCooldown = .1f;
         bool dialReady = true;
         dialActive = true;
         int currentForecastIndex = 0;
@@ -125,12 +126,12 @@ public class InteractionManager : MonoBehaviour
                 if (delta < 0)
                 {
                     // ── Clockwise ──────────────────────────────
-                    rtSpin.rotation = Quaternion.Euler(0f, 0f, rtSpin.rotation.eulerAngles.z + 30f);
+                    rtSpin.rotation = Quaternion.Euler(0f, 0f, rtSpin.rotation.eulerAngles.z - 30f);
                 }
                 else
                 {
                     // ── Counter-clockwise ──────────────────────
-                    rtSpin.rotation = Quaternion.Euler(0f, 0f, rtSpin.rotation.eulerAngles.z - 30f);
+                    rtSpin.rotation = Quaternion.Euler(0f, 0f, rtSpin.rotation.eulerAngles.z + 30f);
                 }
 
                 float z = Mathf.Round(rtSpin.rotation.eulerAngles.z);
@@ -191,7 +192,7 @@ public class InteractionManager : MonoBehaviour
                 }));
             }
 
-            yield return new WaitForSeconds(0.1f);
+            yield return null;
         }
     }
 
@@ -212,26 +213,28 @@ public class InteractionManager : MonoBehaviour
 
         forecasts[(currentIndex + 2) / 3].SetActive(true);
 
-        if (currentIndex == 0 || currentIndex == 10 || currentIndex == 11) {
+        if (currentIndex == 0 || currentIndex == 10 || currentIndex == 11 && !(lastIndex == 0 || lastIndex == 10 || lastIndex == 11)) {
             hapticManager.GoodMorning();
             //StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
             yield return new WaitForSeconds(0.3f);
             StartCoroutine(GradualColorChange(background, Color.black, 1f));
-        } else if (currentIndex >= 1 && currentIndex <= 3)
+        } else if (currentIndex >= 1 && currentIndex <= 3 && !(lastIndex >= 1 && lastIndex <= 3))
         {   
-            StartCoroutine(GradualColorChange(background, Color.red, 1));   // Sunny
+            StartCoroutine(GradualColorChange(background, new Color32(204, 194, 86, 255), 1));   // Sunny
             hapticManager.Sunny();
         }
-        else if (currentIndex >= 4 && currentIndex <= 6)
+        else if (currentIndex >= 4 && currentIndex <= 6 && !(lastIndex >= 4 && lastIndex <= 6))
         {
-            StartCoroutine(GradualColorChange(background, Color.gray, 1));   // Windy
+            StartCoroutine(GradualColorChange(background, new Color32(98, 134, 156, 255), 1));   // Windy
             hapticManager.Windy();
         }
-        else if (currentIndex >= 7 && currentIndex <= 9)
+        else if (currentIndex >= 7 && currentIndex <= 9 && !(lastIndex >= 7 && lastIndex <= 9))
         {
-            StartCoroutine(GradualColorChange(background, Color.blue, 1));   // Rainy
+            StartCoroutine(GradualColorChange(background, new Color32(57, 63, 115, 255), 1));   // Rainy
             hapticManager.Rainy();
         }
+
+        lastIndex = currentIndex;
     }
 
     public void ResetWeather()
@@ -285,7 +288,7 @@ public class InteractionManager : MonoBehaviour
                 yield return new WaitForSeconds(2f);
                 psIn.Play();
                 hapticManager.Breathing(true);
-                yield return new WaitForSeconds(6f);
+                yield return new WaitForSeconds(4f);
             }
         }
 
@@ -324,54 +327,15 @@ public class InteractionManager : MonoBehaviour
         phoneUI.transform.Find("Response").Find("Intro").gameObject.SetActive(false);
         phoneUI.transform.Find("Controls").gameObject.SetActive(true);
 
-        SetEmote(emoteIndex);
-        int thermalVal = 0;
-
-        Vector2 touchStartPos = Vector2.zero;
-        bool isSwiping = false;
-        float swipeThreshold = 5f;
+        emoteIndex = 3;
+        SetEmote();
 
         dialActive = true;
-        float dialCooldown = 0.5f;
+        float dialCooldown = 0.1f;
         bool dialReady = true;
 
         while (dialActive)
         {
-            // ── Touch/Swipe Detection ──────────────────────────
-            if (Input.touchCount > 0)
-            {
-                Touch touch = Input.GetTouch(0);
-
-                if (touch.phase == TouchPhase.Began)
-                {
-                    touchStartPos = touch.position;
-                    isSwiping = true;
-                }
-                else if (touch.phase == TouchPhase.Ended && isSwiping)
-                {
-                    Vector2 swipeDelta = touch.position - touchStartPos;
-                    isSwiping = false;
-
-                    if (Mathf.Abs(swipeDelta.y) > swipeThreshold)
-                    {
-                        if (swipeDelta.y > 0)
-                        {
-                            emoteIndex = (emoteIndex + 1) % emotes.Count;
-                            SetEmote(emoteIndex);
-                            readyToSend = true;
-                        }
-                        else
-                        {
-                            emoteIndex = (emoteIndex - 1 + emotes.Count) % emotes.Count;
-                            SetEmote(emoteIndex);
-                            readyToSend = true;
-                        }
-                    }
-                }else if (touch.phase == TouchPhase.Canceled)
-                {
-                    isSwiping = false;
-                }
-            }
 
             // ── Dial Detection ────────────────────────────────
             float delta = dialManager.lastDelta;
@@ -381,23 +345,19 @@ public class InteractionManager : MonoBehaviour
             {
                 dialReady = false;
 
-                if (delta < 0 || Input.GetKeyDown(KeyCode.T))
+                if (delta < 0 || Input.GetKey(KeyCode.R))
                 {
                     // ── Clockwise ──────────────────────────────
-                    thermalVal = Mathf.Min(thermalVal + 1, thermalLevels);
-                    Debug.Log($"Thermal: {thermalVal}");
-                    readyToSend = true;
+                    emoteIndex = Mathf.Min(emoteIndex + 1, emoteLevels * 2);
                 }
                 else
                 {
                     // ── Counter-clockwise ──────────────────────
-                    thermalVal = Mathf.Max(thermalVal - 1, -thermalLevels);
-                    Debug.Log($"Thermal: {thermalVal}");
-                    readyToSend = true;
+                    emoteIndex = Mathf.Max(emoteIndex - 1, 0);
                 }
 
-                UpdateThermalBackground(thermalVal);
-                // haptic effect
+                readyToSend = true;
+                SetEmote();
 
                 StartCoroutine(ReenableDial(dialCooldown, () =>
                 {
@@ -426,37 +386,61 @@ public class InteractionManager : MonoBehaviour
         rect.localRotation = startRotation;
     }
 
-    void SetEmote(int index)
+    void SetEmote()
     {
+        UpdateThermalBackground();
         for (int i = 0; i < emotes.Count; i++)
-            emotes[i].SetActive(i == index);
-        if (index == 0)
+            emotes[i].SetActive(i == emoteIndex);
+        if (emoteIndex == 0)
         {
-            hapticManager.Happy();
-        } else if (index == 1)
+            hapticManager.Angry3();
+        } 
+        else if (emoteIndex == 1)
+        {
+            hapticManager.Angry2();
+        }
+        else if (emoteIndex == 2) 
+        {
+            hapticManager.Angry1();
+        }
+        else if (emoteIndex == 3) 
         {
             hapticManager.Neutral();
-        } else if (index == 2) {
-            hapticManager.Mad();
+        }
+        else if (emoteIndex == 4) 
+        {
+            hapticManager.Happy1();
+        }
+        else if (emoteIndex == 5) 
+        {
+            hapticManager.Happy2();
+        }
+        else if (emoteIndex == 6) 
+        {
+            hapticManager.Happy3();
+        } 
+        else
+        {
+            StartCoroutine(GradualColorChange(background, Color.black, 1f));
         }
     }
 
-    void UpdateThermalBackground(int thermalVal)
+    void UpdateThermalBackground()
     {
         Color targetColor;
 
-        if (thermalVal >= 0)
+        if (emoteIndex >= 3)
         {
             // neutral → hot (white → red)
-            targetColor = Color.Lerp(Color.black, Color.red, (float)thermalVal / thermalLevels);
+            targetColor = Color.Lerp(Color.black, new Color32(31, 99, 76, 255), (float)(emoteIndex - 3) / emoteLevels);
         }
         else
         {
             // cold → neutral (blue → white)
-            targetColor = Color.Lerp(Color.blue, Color.black, ((float)thermalVal + thermalLevels) / thermalLevels);
+            targetColor = Color.Lerp(new Color32(99, 35, 31, 255), Color.black, ((float)(emoteIndex - 3) + emoteLevels) / emoteLevels);
         }
 
-        StartCoroutine(GradualColorChange(background, targetColor, 0.5f));
+        StartCoroutine(GradualColorChange(background, targetColor, 0.25f));
     }
 
     public void OnBackButton(string state)
@@ -478,18 +462,8 @@ public class InteractionManager : MonoBehaviour
     {
         dialActive = false;
         phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(true);
-        if (emoteIndex == 0)
-        {
-            hapticManager.Happy();
-        }
-        else if (emoteIndex == 1)
-        {
-            hapticManager.Neutral();
-        }
-        else if (emoteIndex == 2)
-        {
-            hapticManager.Mad();
-        }
+        StartCoroutine(Wiggle(emotes[emoteIndex].GetComponent<RectTransform>()));
+        SetEmote();
         yield return new WaitForSeconds(4);
         ResetPhone();
     }
@@ -497,11 +471,20 @@ public class InteractionManager : MonoBehaviour
     public void ResetPhone()
     {
         phoneUI.SetActive(false);
-        SetEmote(-1);
+        emoteIndex = -1;
+        SetEmote();
         phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(false);
         phoneUI.transform.Find("Controls").gameObject.SetActive(false);
         clockFace.gameObject.SetActive(true);
         StartCoroutine(GradualColorChange(background, Color.black, 0.5f));
+        StartCoroutine(EndSession());
+    }
+
+    public IEnumerator EndSession()
+    {
+        phoneUI.transform.Find("Thanks").gameObject.SetActive(true);
+        yield return new WaitForSeconds(3);
+        phoneUI.transform.Find("Thanks").gameObject.SetActive(false);
         startUI.SetActive(true);
     }
 

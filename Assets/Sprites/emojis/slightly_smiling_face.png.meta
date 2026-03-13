@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: cfff4778985802345bb4b3838817daf5
+guid: 5386f716ce7feec4e877d2e18d9e8e01
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1424433873885203634
-    second: meh_0
+      213: 3430731425556678895
+    second: slightly_smiling_face_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: meh_0
+      name: slightly_smiling_face_0
       rect:
         serializedVersion: 2
-        x: 15
-        y: 23
-        width: 482
-        height: 466
+        x: 0
+        y: 0
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e43f90d40f46b3ce0800000000000000
-      internalID: -1424433873885203634
+      spriteID: fe843140e086c9f20800000000000000
+      internalID: 3430731425556678895
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      meh_0: -1424433873885203634
+      slightly_smiling_face_0: 3430731425556678895
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
