@@ -35,6 +35,8 @@ public class InteractionManager : MonoBehaviour
     [Header("Phone")]
     public GameObject phoneUI;
     public List<GameObject> emotes;
+    public int emoteIndex;
+    public int thermalLevels = 5;
     public bool readyToSend = false;
 
     
@@ -59,12 +61,14 @@ public class InteractionManager : MonoBehaviour
         greetingsUI.SetActive(true);
         yield return new WaitForSeconds(1.5f);
         greetingsUI.transform.Find("GoodMorning").gameObject.SetActive(true);
-        // haptic effect
+        hapticManager.GoodMorning();
+
+        
         yield return new WaitForSeconds(2.5f);
+        hapticManager.LetsGetReady();
         StartCoroutine(GradualColorChange(background, new Color(38 / 255f, 99 / 255f, 125 / 255f), 3));
         yield return new WaitForSeconds(.5f);
         greetingsUI.transform.Find("Lets").gameObject.SetActive(true);
-        // haptic effect
         yield return new WaitForSeconds(5);
 
         ResetGreetings();
@@ -94,13 +98,14 @@ public class InteractionManager : MonoBehaviour
 
         // Intro
         weatherUI.transform.Find("Intro").gameObject.SetActive(true);
-        yield return new WaitForSeconds(3f);
-        weatherUI.transform.Find("Intro").Find("SpinArrow").gameObject.SetActive(true);
-        yield return new WaitForSeconds(0.75f);
-        StartCoroutine(RotateFullCircle(weatherUI.transform.Find("Intro").Find("SpinArrow").GetComponent<RectTransform>(), 1.5f));
+        yield return new WaitForSeconds(2f);
+        weatherUI.transform.Find("SpinControl").gameObject.SetActive(true);
+        yield return new WaitForSeconds(0.25f);
+        StartCoroutine(RotateFullCircle(weatherUI.transform.Find("SpinControl").gameObject.GetComponent<RectTransform>(), 1.5f));
+        
 
         // Forecasts
-        float dialCooldown = 5f;
+        float dialCooldown = .5f;
         bool dialReady = true;
         dialActive = true;
         int currentForecastIndex = 0;
@@ -110,48 +115,75 @@ public class InteractionManager : MonoBehaviour
             float delta = dialManager.lastDelta;
             dialManager.lastDelta = 0f;
 
-            if (dialReady && Mathf.Abs(delta) > 0.5f)
+            if ((dialReady && Mathf.Abs(delta) > 0.5f) || Input.GetKey(KeyCode.R))
             {
                 dialReady = false;
                 weatherUI.transform.Find("SpinControl").gameObject.SetActive(true);
 
+                RectTransform rtSpin = weatherUI.transform.Find("SpinControl").GetComponent<RectTransform>();
+
                 if (delta < 0)
                 {
                     // ── Clockwise ──────────────────────────────
-                    int nextIndex = Mathf.Min(currentForecastIndex + 1, forecasts.Count - 1);
-                    StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
-                    currentForecastIndex = nextIndex;
+                    rtSpin.rotation = Quaternion.Euler(0f, 0f, rtSpin.rotation.eulerAngles.z + 30f);
                 }
                 else
                 {
                     // ── Counter-clockwise ──────────────────────
-                    int nextIndex = Mathf.Max(currentForecastIndex - 1, 0);
-                    StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
-                    currentForecastIndex = nextIndex;
+                    rtSpin.rotation = Quaternion.Euler(0f, 0f, rtSpin.rotation.eulerAngles.z - 30f);
                 }
 
+                float z = Mathf.Round(rtSpin.rotation.eulerAngles.z);
+
+                // 12 zones of 30 degrees each, starting at 0
+                // 0=blank, 1=9am, 2=10am, 3=11am, 4=12pm, 5=1pm, 6=2pm, 7=3pm, 8=4pm, 9=5pm, 10=next, 11=next
+                if (z >= 330f && z <= 359f)
+                    currentForecastIndex = 5;
+                else if (z >= 0f && z <= 29f)
+                    currentForecastIndex = 4;
+                else if (z >= 30f && z <= 59f)
+                    currentForecastIndex = 3;
+                else if (z >= 60f && z <= 89f)
+                    currentForecastIndex = 2;
+                else if (z >= 90f && z <= 119f)
+                    currentForecastIndex = 1;
+                else if (z >= 120f && z <= 149f)
+                    currentForecastIndex = 0;
+                else if (z >= 150f && z <= 179f)
+                    currentForecastIndex = 11;
+                else if (z >= 180f && z <= 209f)
+                    currentForecastIndex = 10;
+                else if (z >= 210f && z <= 239f)
+                    currentForecastIndex = 9;
+                else if (z >= 240f && z <= 269f)
+                    currentForecastIndex = 8;
+                else if (z >= 270f && z <= 299f)
+                    currentForecastIndex = 7;
+                else if (z >= 300f && z <= 329f)
+                    currentForecastIndex = 6;
+                    
+
+                currentForecastIndex = Mathf.Clamp(currentForecastIndex, 0, 10);
+                Debug.Log($"z={z} index={currentForecastIndex}");
+
+                TMP_Text spinLabel = weatherUI.transform.Find("SpinControl").Find("Text").GetComponent<TMP_Text>();
+                string[] forecastLabels = { "turn", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "next", "next" };
+                spinLabel.text = forecastLabels[currentForecastIndex];
+
+                if (z == 0f || z == 180f)
+                {
+                    weatherUI.transform.Find("SpinControl").Find("Text").GetComponent<RectTransform>().rotation = Quaternion.Euler(0f, 0f, 0f);
+                }
+                else
+                {
+                    weatherUI.transform.Find("SpinControl").Find("Text").GetComponent<RectTransform>().rotation = Quaternion.Euler(0f, 0f, 0f);
+                }
+
+                if (z % 30f == 0f)
+                {
+                    StartCoroutine(SetForecast(currentForecastIndex));
+                }
                 // Cooldown: flush delta then re-enable after delay
-                StartCoroutine(ReenableDial(dialCooldown, () =>
-                {
-                    dialManager.lastDelta = 0f; // discard any input during cooldown
-                    dialReady = true;
-                }));
-            } else if (Input.GetKey(KeyCode.R))
-            {
-                int nextIndex = Mathf.Min(currentForecastIndex + 1, forecasts.Count - 1);
-                StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
-                currentForecastIndex = nextIndex;
-
-                StartCoroutine(ReenableDial(dialCooldown, () =>
-                {
-                    dialManager.lastDelta = 0f; // discard any input during cooldown
-                    dialReady = true;
-                }));
-            } else if (Input.GetKey(KeyCode.T)){
-                int nextIndex = Mathf.Max(currentForecastIndex - 1, 0);
-                StartCoroutine(SetForecast(currentForecastIndex, nextIndex));
-                currentForecastIndex = nextIndex;
-
                 StartCoroutine(ReenableDial(dialCooldown, () =>
                 {
                     dialManager.lastDelta = 0f; // discard any input during cooldown
@@ -169,43 +201,37 @@ public class InteractionManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    IEnumerator SetForecast(int currentIndex, int nextIndex)
+    IEnumerator SetForecast(int currentIndex)
     {
-        if (currentIndex == nextIndex) {
-            // haptic effect
-            StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
-            StartCoroutine(GradualColorChange(background, Color.black, 0.3f));
-            yield return null; // already at boundary
-        }
-        forecasts[currentIndex].SetActive(false);
-
-        // maybe fade in
-        if (nextIndex == 0 )
+        hapticManager.Interrupt();
+        
+        foreach (GameObject forecast in forecasts)
         {
-            StartCoroutine(GradualColorChange(background, Color.black, 1));
+            forecast.SetActive(false);
         }
-        else if (nextIndex == 1)
+
+        forecasts[(currentIndex + 2) / 3].SetActive(true);
+
+        if (currentIndex == 0 || currentIndex == 10 || currentIndex == 11) {
+            hapticManager.GoodMorning();
+            //StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
+            yield return new WaitForSeconds(0.3f);
+            StartCoroutine(GradualColorChange(background, Color.black, 1f));
+        } else if (currentIndex >= 1 && currentIndex <= 3)
         {   
-            StartCoroutine(GradualColorChange(background, Color.red, 3));   // Sunny
-            // haptic effect
+            StartCoroutine(GradualColorChange(background, Color.red, 1));   // Sunny
+            hapticManager.Sunny();
         }
-        else if (nextIndex == 2)
+        else if (currentIndex >= 4 && currentIndex <= 6)
         {
-            StartCoroutine(GradualColorChange(background, Color.gray, 3));   // Windy
-            // haptic effect
+            StartCoroutine(GradualColorChange(background, Color.gray, 1));   // Windy
+            hapticManager.Windy();
         }
-        else if (nextIndex == 3)
+        else if (currentIndex >= 7 && currentIndex <= 9)
         {
-            StartCoroutine(GradualColorChange(background, Color.blue, 3));   // Rainy
-            // haptic effect
-        } 
-        else if (nextIndex == 4)
-        {
-            StartCoroutine(GradualColorChange(background, Color.black, 1));
+            StartCoroutine(GradualColorChange(background, Color.blue, 1));   // Rainy
+            hapticManager.Rainy();
         }
-
-        yield return new WaitForSeconds(1);
-        forecasts[nextIndex].SetActive(true);
     }
 
     public void ResetWeather()
@@ -213,7 +239,7 @@ public class InteractionManager : MonoBehaviour
         dialActive = false;
         foreach (GameObject forecast in forecasts)
         {
-            forecast.SetActive(true);
+            forecast.SetActive(false);
         }
         weatherUI.transform.Find("Intro").gameObject.SetActive(false);
         weatherUI.transform.Find("Intro").Find("SpinArrow").gameObject.SetActive(false);
@@ -247,16 +273,19 @@ public class InteractionManager : MonoBehaviour
         ParticleSystem psOut = breathingUI.transform.Find("Exercise").Find("BreatheOut").GetComponent<ParticleSystem>();
         for (int i = 0; i < 3; i++)
         {
-            hapticManager.Breathing();
-            yield return new WaitForSeconds(2f);
-            psIn.Play();
-            yield return new WaitForSeconds(4.5f);
-
             if (i != 2) {
+                yield return new WaitForSeconds(2f);
+                psIn.Play();
+                hapticManager.Breathing();
+                yield return new WaitForSeconds(6f);
                 psOut.Play();
-                yield return new WaitForSeconds(4f);
-
-                yield return new WaitForSeconds(1);
+                yield return new WaitForSeconds(3f);
+            } else
+            {
+                yield return new WaitForSeconds(2f);
+                psIn.Play();
+                hapticManager.Breathing(true);
+                yield return new WaitForSeconds(6f);
             }
         }
 
@@ -284,7 +313,7 @@ public class InteractionManager : MonoBehaviour
         phoneUI.transform.Find("Call").gameObject.SetActive(true);
         StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
         StartCoroutine(Wiggle(phoneUI.transform.Find("Call").Find("Image").gameObject.GetComponent<RectTransform>(), 5f, 20f, 4f));
-        // haptic effect
+        hapticManager.Call();
         yield return new WaitForSeconds(4);
 
         // Response
@@ -295,8 +324,7 @@ public class InteractionManager : MonoBehaviour
         phoneUI.transform.Find("Response").Find("Intro").gameObject.SetActive(false);
         phoneUI.transform.Find("Controls").gameObject.SetActive(true);
 
-        int currentEmoteIndex = 0;
-        SetEmote(currentEmoteIndex);
+        SetEmote(emoteIndex);
         int thermalVal = 0;
 
         Vector2 touchStartPos = Vector2.zero;
@@ -304,7 +332,7 @@ public class InteractionManager : MonoBehaviour
         float swipeThreshold = 5f;
 
         dialActive = true;
-        float dialCooldown = 3f;
+        float dialCooldown = 0.5f;
         bool dialReady = true;
 
         while (dialActive)
@@ -328,14 +356,14 @@ public class InteractionManager : MonoBehaviour
                     {
                         if (swipeDelta.y > 0)
                         {
-                            currentEmoteIndex = (currentEmoteIndex + 1) % emotes.Count;
-                            SetEmote(currentEmoteIndex);
+                            emoteIndex = (emoteIndex + 1) % emotes.Count;
+                            SetEmote(emoteIndex);
                             readyToSend = true;
                         }
                         else
                         {
-                            currentEmoteIndex = (currentEmoteIndex - 1 + emotes.Count) % emotes.Count;
-                            SetEmote(currentEmoteIndex);
+                            emoteIndex = (emoteIndex - 1 + emotes.Count) % emotes.Count;
+                            SetEmote(emoteIndex);
                             readyToSend = true;
                         }
                     }
@@ -356,14 +384,14 @@ public class InteractionManager : MonoBehaviour
                 if (delta < 0 || Input.GetKeyDown(KeyCode.T))
                 {
                     // ── Clockwise ──────────────────────────────
-                    thermalVal = Mathf.Min(thermalVal + 1, 3);
+                    thermalVal = Mathf.Min(thermalVal + 1, thermalLevels);
                     Debug.Log($"Thermal: {thermalVal}");
                     readyToSend = true;
                 }
                 else
                 {
                     // ── Counter-clockwise ──────────────────────
-                    thermalVal = Mathf.Max(thermalVal - 1, -3);
+                    thermalVal = Mathf.Max(thermalVal - 1, -thermalLevels);
                     Debug.Log($"Thermal: {thermalVal}");
                     readyToSend = true;
                 }
@@ -402,6 +430,15 @@ public class InteractionManager : MonoBehaviour
     {
         for (int i = 0; i < emotes.Count; i++)
             emotes[i].SetActive(i == index);
+        if (index == 0)
+        {
+            hapticManager.Happy();
+        } else if (index == 1)
+        {
+            hapticManager.Neutral();
+        } else if (index == 2) {
+            hapticManager.Mad();
+        }
     }
 
     void UpdateThermalBackground(int thermalVal)
@@ -411,12 +448,12 @@ public class InteractionManager : MonoBehaviour
         if (thermalVal >= 0)
         {
             // neutral → hot (white → red)
-            targetColor = Color.Lerp(Color.black, Color.red, thermalVal / 3f);
+            targetColor = Color.Lerp(Color.black, Color.red, (float)thermalVal / thermalLevels);
         }
         else
         {
             // cold → neutral (blue → white)
-            targetColor = Color.Lerp(Color.blue, Color.black, (thermalVal + 3f) / 3f);
+            targetColor = Color.Lerp(Color.blue, Color.black, ((float)thermalVal + thermalLevels) / thermalLevels);
         }
 
         StartCoroutine(GradualColorChange(background, targetColor, 0.5f));
@@ -441,8 +478,19 @@ public class InteractionManager : MonoBehaviour
     {
         dialActive = false;
         phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(true);
-        // haptic effect
-        yield return new WaitForSeconds(5);
+        if (emoteIndex == 0)
+        {
+            hapticManager.Happy();
+        }
+        else if (emoteIndex == 1)
+        {
+            hapticManager.Neutral();
+        }
+        else if (emoteIndex == 2)
+        {
+            hapticManager.Mad();
+        }
+        yield return new WaitForSeconds(4);
         ResetPhone();
     }
 

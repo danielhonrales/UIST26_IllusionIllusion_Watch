@@ -74,7 +74,7 @@ public class NotificationsManager : MonoBehaviour
         yield return new WaitForSeconds(1);
         incoming.SetActive(true);
         areYouComing.SetActive(true);
-        hapticManager.Incoming();
+        //hapticManager.Incoming();
 
         yield return new WaitForSeconds(1);
         reactions.SetActive(true);
@@ -165,7 +165,7 @@ public class NotificationsManager : MonoBehaviour
         hot.SetActive(true);
         
         yield return new WaitForSeconds(2);
-        hapticManager.Rain();
+        hapticManager.Rainy();
         yield return new WaitForSeconds(1);
         hot.SetActive(false);
 

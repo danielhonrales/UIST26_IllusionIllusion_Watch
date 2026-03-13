@@ -5,11 +5,12 @@ using Newtonsoft.Json;
 using System.Collections;
 using System.Net.Sockets;
 using System.Text;
+using TMPro;
 
 public class HapticManager : MonoBehaviour
 {
 
-    public ToolTCP toolTCP;
+    public CommunicationManager communicationManager;
     private AndroidJavaObject motor;
 
     int loops = 3;
@@ -22,6 +23,10 @@ public class HapticManager : MonoBehaviour
     float funneling_duration = 0.12f;
     float funneling_interval = 0.5f;
 
+    float startTimeDelay = 0.1f;
+
+    public List<Coroutine> watchTasks;
+
     void Start()
     {
         if (Application.platform == RuntimePlatform.Android)
@@ -30,6 +35,13 @@ public class HapticManager : MonoBehaviour
             using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
             motor = activity.Call<AndroidJavaObject>("getSystemService", "vibrator");
         }
+
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+        {
+            startTimeDelay += .4f;
+        }
+
+        watchTasks = new();
     }
 
     // Simple pulse
@@ -109,7 +121,209 @@ public class HapticManager : MonoBehaviour
         Vibrate(1000);
     }
 
-    public void Breathing()
+    public void TestSync()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        pattern.tactilePulses.Add(new(0, time, 0.3f, 100));
+        pattern.tactilePulses.Add(new(1, time, 0.3f, 100));
+        watchCommands.Add(new(time, 0.3f, 100));
+        time += 1f;
+        pattern.tactilePulses.Add(new(0, time, 0.3f, 100));
+        pattern.tactilePulses.Add(new(1, time, 0.3f, 100));
+        watchCommands.Add(new(time, 0.3f, 100));
+        time += 1f;
+        pattern.tactilePulses.Add(new(0, time, 0.3f, 100));
+        pattern.tactilePulses.Add(new(1, time, 0.3f, 100));
+        watchCommands.Add(new(time, 0.3f, 100));
+        time += 1f;
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void GoodMorning()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        watchCommands.Add(new(time, 0.2f, 100));
+        time += 0.1f;
+        watchCommands.Add(new(time, 0.2f, 100));
+
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void LetsGetReady()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        pattern.thermalPulses.Add(new(0, time, 6f, 2.3f, -1));
+
+        pattern.tactilePulses.Add(new(0, time, motion_duration / 2, 30));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 50, 1, 1));
+        time += motion_interval;
+        watchCommands.Add(new(time, motion_duration, 65, 1, 1));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(0, time, motion_duration, 80, 1, 1));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 70, 1, 1));
+        time += motion_interval;
+        watchCommands.Add(new(time, motion_duration, 65, 1, 1));
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void Sunny ()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        // Thermal - Hot
+        pattern.thermalPulses.Add(new(0, time, 4, 2.0f, 1));
+        time += preheat_time;
+
+        // Inward - Motion
+        watchCommands.Add(new(time, motion_duration, 100));
+        time += motion_interval;
+        watchCommands.Add(new(time, motion_duration, 60, 0, 1));
+        pattern.tactilePulses.Add(new(0, time, motion_duration, 60, 1, 0));
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 60, 1, 0));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(0, time, motion_duration, 100, 0, 0));
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 100, 0, 0));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(0, time, motion_duration, 60, 0, 1));
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 60, 0, 1));
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void Windy()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        pattern.thermalPulses.Add(new(0, time, 4f, 1.4f, -1));
+
+        pattern.tactilePulses.Add(new(0, time, motion_duration / 2, 30));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 50, 1, 1));
+        time += motion_interval;
+        watchCommands.Add(new(time, motion_duration, 65, 1, 1));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(0, time, motion_duration, 80, 1, 1));
+        time += motion_interval;
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 70, 1, 1));
+        time += motion_interval;
+        watchCommands.Add(new(time, motion_duration, 65, 1, 1));
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void Rainy()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        // Thermal - Cold
+        pattern.thermalPulses.Add(new(0, time, 4, 2.3f, -1));
+        time += preheat_time;
+
+        // Saltation
+        for (int i = 0; i < hop_count; i++)
+        {
+            pattern.tactilePulses.Add(new(1, time, saltation_duration, 100));
+            time += saltation_interval;
+        }
+        for (int i = 0; i < hop_count; i++)
+        {
+            watchCommands.Add(new(time, saltation_duration, 100, 0, 0));
+            time += saltation_interval;
+        }
+        for (int i = 0; i < hop_count; i++)
+        {
+            pattern.tactilePulses.Add(new(0, time, saltation_duration, 100));
+            time += saltation_interval;
+        }
+        for (int i = 0; i < hop_count; i++)
+        {
+            pattern.tactilePulses.Add(new(1, time, saltation_duration, 100));
+            time += saltation_interval;
+        }
+        for (int i = 0; i < hop_count; i++)
+        {
+            watchCommands.Add(new(time, saltation_duration, 100, 0, 0));
+            time += saltation_interval;
+        }
+        for (int i = 0; i < hop_count; i++)
+        {
+            pattern.tactilePulses.Add(new(0, time, saltation_duration, 100));
+            time += saltation_interval;
+        }
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void Breathing(bool halfBreath = false)
     {
         PatternInfo pattern = new();
         List<WatchCommand> watchCommands = new();
@@ -168,31 +382,28 @@ public class HapticManager : MonoBehaviour
         watchCommands.Add(new(time, funneling_duration, 95, 0, 0));
         time += funneling_interval * 1.2f; */
         
-        pattern.thermalPulses.Add(new(0, time, 5, 1.8f, 1));   // Thermal - Cold
+        if (!halfBreath) {
+            pattern.thermalPulses.Add(new(0, time, 5, 1.8f, 1));   // Thermal - Cold
 
-        watchCommands.Add(new(time, funneling_duration, 95, 0, 0));
-        pattern.tactilePulses.Add(new(0, time, funneling_duration, 95));
-        time += funneling_interval * 1.2f;
+            watchCommands.Add(new(time, funneling_duration, 95, 0, 0));
+            pattern.tactilePulses.Add(new(0, time, funneling_duration, 95));
+            time += funneling_interval * 1.2f;
 
-        // Out - Motion
-        watchCommands.Add(new(time, motion_duration * 1.2f, 50, 0, 0));
-        time += motion_interval * 1.1f;
-        pattern.tactilePulses.Add(new(1, time, motion_duration * 1.2f, 65, 1, 1));
-        time += motion_interval * 1.1f;
-        pattern.tactilePulses.Add(new(0, time, motion_duration * 1.4f, 80, 1, 1));
-        time += motion_interval * 1.2f;
-        watchCommands.Add(new(time, motion_duration * 1.4f, 65, 1, 1));
-        time += motion_interval * 1.2f;
-        pattern.tactilePulses.Add(new(1, time, motion_duration * 1.4f, 65, 1, 1));
-        time += motion_interval * 1.1f;
-        pattern.tactilePulses.Add(new(0, time, motion_duration * 1.2f, 65, 1, 1));
-        time += motion_interval / 2;
-        watchCommands.Add(new(time, motion_duration / 2, 40, 1, 1));
-
-        // Determine start time
-        pattern.startTime = GetMasterClockTime() + 2000;
-        Debug.Log(GetMasterClockTime());
-        Debug.Log(pattern.startTime);
+            // Out - Motion
+            watchCommands.Add(new(time, motion_duration * 1.2f, 50, 0, 0));
+            time += motion_interval * 1.1f;
+            pattern.tactilePulses.Add(new(1, time, motion_duration * 1.2f, 65, 1, 1));
+            time += motion_interval * 1.1f;
+            pattern.tactilePulses.Add(new(0, time, motion_duration * 1.4f, 80, 1, 1));
+            time += motion_interval * 1.2f;
+            watchCommands.Add(new(time, motion_duration * 1.4f, 65, 1, 1));
+            time += motion_interval * 1.2f;
+            pattern.tactilePulses.Add(new(1, time, motion_duration * 1.4f, 65, 1, 1));
+            time += motion_interval * 1.1f;
+            pattern.tactilePulses.Add(new(0, time, motion_duration * 1.2f, 65, 1, 1));
+            time += motion_interval / 2;
+            watchCommands.Add(new(time, motion_duration / 2, 40, 1, 1));
+        }
 
         // Send info
         pattern.sendTime = GetMasterClockTime();
@@ -203,21 +414,42 @@ public class HapticManager : MonoBehaviour
                 FloatParseHandling = FloatParseHandling.Double
             });
         Debug.Log(json);
-        toolTCP.SendMessageToPi(json);
-        SendWatchCommands(pattern.startTime, watchCommands);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
     }
 
-    public void Incoming()
+    public void Call()
     {
         PatternInfo pattern = new();
         List<WatchCommand> watchCommands = new();
         float time = 0;
 
-        watchCommands.Add(new(time, 0.2f, 100));
-        time += 0.1f;
-        watchCommands.Add(new(time, 0.2f, 100));
+        pattern.thermalPulses.Add(new(0, time, 4, 2.1f, 1));
 
-        SendWatchCommands(pattern.startTime, watchCommands);
+        for (int i = 0; i < 3; i++)
+        {
+            pattern.tactilePulses.Add(new(0, time, 0.2f, 100));
+            pattern.tactilePulses.Add(new(1, time, 0.2f, 100));
+            time += 0.7f;
+            pattern.tactilePulses.Add(new(1, time, 0.2f, 100));
+            watchCommands.Add(new(time, 0.2f, 100));
+            time += 0.7f;
+            watchCommands.Add(new(time, 0.2f, 100));
+            pattern.tactilePulses.Add(new(0, time, 0.2f, 100));
+            time += 0.7f;
+        }
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
     }
 
     public void Mad()
@@ -243,8 +475,33 @@ public class HapticManager : MonoBehaviour
         pattern.tactilePulses.Add(new(0, time, motion_duration, 60, 0, 1));
         pattern.tactilePulses.Add(new(1, time, motion_duration, 60, 0, 1));
 
-        // Determine start time
-        pattern.startTime = GetMasterClockTime() + 2000;
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+    }
+
+    public void Neutral()
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        // Thermal - Cold
+        //pattern.thermalPulses.Add(new(0, time, 4, 2.3f, -1));
+        //time += preheat_time;
+
+        // Inward - Motion
+        pattern.tactilePulses.Add(new(0, time, 0.3f, 100));
+        pattern.tactilePulses.Add(new(1, time, 0.3f, 100));
+        watchCommands.Add(new(time, 0.3f, 100));
 
         // Send info
         pattern.sendTime = GetMasterClockTime();
@@ -255,8 +512,8 @@ public class HapticManager : MonoBehaviour
                 FloatParseHandling = FloatParseHandling.Double
             });
         Debug.Log(json);
-        toolTCP.SendMessageToPi(json);
-        SendWatchCommands(pattern.startTime, watchCommands);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
     }
 
     public void Happy()
@@ -270,16 +527,15 @@ public class HapticManager : MonoBehaviour
         //time += preheat_time;
 
         // Inward - Motion
-        watchCommands.Add(new(time, motion_duration, 100, 1, 1));
+        pattern.tactilePulses.Add(new(0, time, motion_duration / 2, 30));
         time += motion_interval;
-        pattern.tactilePulses.Add(new(0, time, motion_duration, 100, 1, 0));
-        pattern.tactilePulses.Add(new(1, time, motion_duration, 100, 1, 0));
+        pattern.tactilePulses.Add(new(1, time, motion_duration, 50, 1, 1));
         time += motion_interval;
-        pattern.tactilePulses.Add(new(0, time, motion_duration, 60, 0, 1));
-        pattern.tactilePulses.Add(new(1, time, motion_duration, 60, 0, 1));
-
-        // Determine start time
-        pattern.startTime = GetMasterClockTime() + 2000;
+        watchCommands.Add(new(time, motion_duration, 65, 1, 1));
+        time += 0.5f;
+        watchCommands.Add(new(time, 0.2f, 100, 1, 1));
+        time += 0.4f;
+        watchCommands.Add(new(time, 0.2f, 100, 1, 1));
 
         // Send info
         pattern.sendTime = GetMasterClockTime();
@@ -290,67 +546,11 @@ public class HapticManager : MonoBehaviour
                 FloatParseHandling = FloatParseHandling.Double
             });
         Debug.Log(json);
-        toolTCP.SendMessageToPi(json);
-        SendWatchCommands(pattern.startTime, watchCommands);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
     }
 
-    public void Rain()
-    {
-        PatternInfo pattern = new();
-        List<WatchCommand> watchCommands = new();
-        float time = 0;
-
-        // Thermal - Cold
-        pattern.thermalPulses.Add(new(0, time, 4, 2.3f, -1));
-        time += preheat_time;
-
-        // Saltation
-        for (int i = 0; i < hop_count; i++)
-        {
-            pattern.tactilePulses.Add(new(1, time, saltation_duration, 100));
-            time += saltation_interval;
-        }
-        for (int i = 0; i < hop_count; i++)
-        {
-            watchCommands.Add(new(time, saltation_duration, 100, 0, 0));
-            time += saltation_interval;
-        }
-        for (int i = 0; i < hop_count; i++)
-        {
-            pattern.tactilePulses.Add(new(0, time, saltation_duration, 100));
-            time += saltation_interval;
-        }
-        for (int i = 0; i < hop_count; i++)
-        {
-            pattern.tactilePulses.Add(new(1, time, saltation_duration, 100));
-            time += saltation_interval;
-        }
-        for (int i = 0; i < hop_count; i++)
-        {
-            watchCommands.Add(new(time, saltation_duration, 100, 0, 0));
-            time += saltation_interval;
-        }
-        for (int i = 0; i < hop_count; i++)
-        {
-            pattern.tactilePulses.Add(new(0, time, saltation_duration, 100));
-            time += saltation_interval;
-        }
-
-        // Determine start time
-        pattern.startTime = GetMasterClockTime() + 2000;
-
-        // Send info
-        pattern.sendTime = GetMasterClockTime();
-        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
-            new JsonSerializerSettings
-            {
-                FloatFormatHandling = FloatFormatHandling.DefaultValue,
-                FloatParseHandling = FloatParseHandling.Double
-            });
-        Debug.Log(json);
-        toolTCP.SendMessageToPi(json);
-        SendWatchCommands(pattern.startTime, watchCommands);
-    }
+    
 
     public void Hot()
     {
@@ -371,9 +571,6 @@ public class HapticManager : MonoBehaviour
         pattern.tactilePulses.Add(new(1, time, funneling_duration, 95));
         time += 0.3f;
 
-        // Determine start time
-        pattern.startTime = GetMasterClockTime() + 2000;
-
         // Send info
         pattern.sendTime = GetMasterClockTime();
         string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
@@ -383,7 +580,7 @@ public class HapticManager : MonoBehaviour
                 FloatParseHandling = FloatParseHandling.Double
             });
         Debug.Log(json);
-        toolTCP.SendMessageToPi(json);
+        communicationManager.SendMessageToPi(json);
     }
 
     public void Alarm()
@@ -419,9 +616,6 @@ public class HapticManager : MonoBehaviour
         watchCommands.Add(new(time, motion_duration, 80, 1, 1));
         time += motion_interval;
 
-        // Determine start time
-        pattern.startTime = GetMasterClockTime() + 2000;
-
         // Send info
         pattern.sendTime = GetMasterClockTime();
         string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
@@ -431,28 +625,35 @@ public class HapticManager : MonoBehaviour
                 FloatParseHandling = FloatParseHandling.Double
             });
         Debug.Log(json);
-        toolTCP.SendMessageToPi(json);
-        SendWatchCommands(pattern.startTime, watchCommands);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
     }
 
-    public void SendWatchCommands(long startTime, List<WatchCommand> commands)
+    public void SendWatchCommands(float startTimeDelay, List<WatchCommand> commands)
     {
         foreach (var cmd in commands)
         {
             // Option 1: Schedule with coroutine
-            StartCoroutine(DelayedVibrate(startTime, cmd.waitTime, cmd.duration, cmd.intensity / 2, cmd.rampUp, cmd.rampDown));
+            StartCoroutine(DelayedVibrate(startTimeDelay, cmd.waitTime, cmd.duration, cmd.intensity / 2, cmd.rampUp, cmd.rampDown));
 
             // Option 2: Send to watch over network (if watch is networked)
             // watchTCP.SendVibrationCommand(cmd);
         }
     }
 
-    private IEnumerator DelayedVibrate(long startTime, float waitTime, float duration, int intensity, int rampUp = 0, int rampDown = 0)
+    public void Interrupt()
     {
-        while (GetMasterClockTime() < startTime)
+        foreach (Coroutine watchTask in watchTasks)
         {
-            yield return new WaitForSeconds(0.001f);
+            StopCoroutine(watchTask);
         }
+        watchTasks = new();
+        communicationManager.SendMessageToPi("interrupt");
+    }
+
+    private IEnumerator DelayedVibrate(float startTimeDelay, float waitTime, float duration, int intensity, int rampUp = 0, int rampDown = 0)
+    {
+        yield return new WaitForSeconds(startTimeDelay);
         yield return new WaitForSeconds(waitTime);
         VibrateRamp(duration, intensity, rampUp, rampDown);
     }
@@ -466,8 +667,8 @@ public class HapticManager : MonoBehaviour
 [System.Serializable]
 public class PatternInfo
 {
+    public string device;
     public long sendTime;
-    public long startTime;
     public List<TactilePulse> tactilePulses;
     public List<ThermalPulse> thermalPulses;
 
@@ -475,6 +676,34 @@ public class PatternInfo
     {
         tactilePulses = new List<TactilePulse>();
         thermalPulses = new List<ThermalPulse>();
+        device = DetectDevice();
+    }
+
+    string DetectDevice()
+    {
+        switch (Application.platform)
+        {
+            case RuntimePlatform.Android:
+                return "android";
+
+            case RuntimePlatform.WindowsPlayer:
+            case RuntimePlatform.WindowsEditor:
+                return "windows";
+
+            case RuntimePlatform.OSXPlayer:
+            case RuntimePlatform.OSXEditor:
+                return "mac";
+
+            case RuntimePlatform.LinuxPlayer:
+            case RuntimePlatform.LinuxEditor:
+                return "linux";
+
+            case RuntimePlatform.IPhonePlayer:
+                return "ios";
+
+            default:
+                return "unknown";
+        }
     }
 }
 
