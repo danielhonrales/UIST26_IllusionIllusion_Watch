@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -27,6 +28,12 @@ public class InteractionManager : MonoBehaviour
     public GameObject weatherUI;
     public List<GameObject> forecasts;
     public int lastIndex;
+
+    [Space(10)]
+    [Header("AC")]
+    public GameObject acUI;
+    public int currentTemp;
+    public float tempLevels = 16f;
 
     [Space(10)]
     [Header("Breathing")]
@@ -70,6 +77,7 @@ public class InteractionManager : MonoBehaviour
         StartCoroutine(GradualColorChange(background, new Color(38 / 255f, 99 / 255f, 125 / 255f), 3));
         yield return new WaitForSeconds(.5f);
         greetingsUI.transform.Find("Lets").gameObject.SetActive(true);
+        greetingsUI.transform.Find("Effect").GetComponent<ParticleSystem>().Play();
         yield return new WaitForSeconds(5);
 
         ResetGreetings();
@@ -110,6 +118,9 @@ public class InteractionManager : MonoBehaviour
         bool dialReady = true;
         dialActive = true;
         int currentForecastIndex = 0;
+        weatherUI.transform.Find("SpinControl").Find("Text").GetComponent<TMP_Text>().text = "turn";
+
+        lastIndex = -1;
 
         while (dialActive)
         {
@@ -204,8 +215,6 @@ public class InteractionManager : MonoBehaviour
 
     IEnumerator SetForecast(int currentIndex)
     {
-        hapticManager.Interrupt();
-        
         foreach (GameObject forecast in forecasts)
         {
             forecast.SetActive(false);
@@ -214,23 +223,30 @@ public class InteractionManager : MonoBehaviour
         forecasts[(currentIndex + 2) / 3].SetActive(true);
 
         if (currentIndex == 0 || currentIndex == 10 || currentIndex == 11 && !(lastIndex == 0 || lastIndex == 10 || lastIndex == 11)) {
-            hapticManager.GoodMorning();
+            hapticManager.Interrupt();
             //StartCoroutine(GradualColorChange(background, Color.white, 0.3f));
             yield return new WaitForSeconds(0.3f);
             StartCoroutine(GradualColorChange(background, Color.black, 1f));
+            hapticManager.GoodMorning();
         } else if (currentIndex >= 1 && currentIndex <= 3 && !(lastIndex >= 1 && lastIndex <= 3))
         {   
             StartCoroutine(GradualColorChange(background, new Color32(204, 194, 86, 255), 1));   // Sunny
+            hapticManager.Interrupt();
+            yield return new WaitForSeconds(0.1f);
             hapticManager.Sunny();
         }
         else if (currentIndex >= 4 && currentIndex <= 6 && !(lastIndex >= 4 && lastIndex <= 6))
         {
             StartCoroutine(GradualColorChange(background, new Color32(98, 134, 156, 255), 1));   // Windy
+            hapticManager.Interrupt();
+            yield return new WaitForSeconds(0.1f);
             hapticManager.Windy();
         }
         else if (currentIndex >= 7 && currentIndex <= 9 && !(lastIndex >= 7 && lastIndex <= 9))
         {
             StartCoroutine(GradualColorChange(background, new Color32(57, 63, 115, 255), 1));   // Rainy
+            hapticManager.Interrupt();
+            yield return new WaitForSeconds(0.1f);
             hapticManager.Rainy();
         }
 
@@ -250,6 +266,103 @@ public class InteractionManager : MonoBehaviour
         weatherUI.SetActive(false);
         StartCoroutine(GradualColorChange(background, Color.black, 1));
 
+        AC();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public void AC()
+    {
+        StartCoroutine(ACHelper());
+    }
+
+    public IEnumerator ACHelper()
+    {
+        acUI.SetActive(true);
+        yield return new WaitForSeconds(1);
+
+        // Intro
+        acUI.transform.Find("Intro").gameObject.SetActive(true);
+        yield return new WaitForSeconds(3f);
+        acUI.transform.Find("Intro").gameObject.SetActive(false);
+        acUI.transform.Find("SpinControl").gameObject.SetActive(true);
+        acUI.transform.Find("Temp").gameObject.SetActive(true);
+        acUI.transform.Find("Degree").gameObject.SetActive(true);
+        acUI.transform.Find("Exit").gameObject.SetActive(true);
+        yield return new WaitForSeconds(0.25f);
+        StartCoroutine(RotateFullCircle(weatherUI.transform.Find("SpinControl").gameObject.GetComponent<RectTransform>(), 1.5f));
+
+        float dialCooldown = .1f;
+        bool dialReady = true;
+        dialActive = true;
+        currentTemp = 32;
+        acUI.transform.Find("Temp").gameObject.GetComponent<TMP_Text>().text = currentTemp.ToString();
+
+        while (dialActive)
+        {
+            float delta = dialManager.lastDelta;
+            dialManager.lastDelta = 0f;
+
+            if ((dialReady && Mathf.Abs(delta) > 0.5f) || Input.GetKey(KeyCode.R))
+            {
+                if (delta < 0)
+                {
+                    // ── Clockwise ──────────────────────────────
+                    if (currentTemp < 48) {
+                        currentTemp++;
+                    }
+                }
+                else
+                {
+                    // ── Counter-clockwise ──────────────────────
+                    if (currentTemp > 16)
+                    {
+                        currentTemp--;
+                    }
+                }
+
+                acUI.transform.Find("Temp").gameObject.GetComponent<TMP_Text>().text = currentTemp.ToString();
+                UpdateACBackground();
+                hapticManager.Interrupt();
+                hapticManager.AC(currentTemp);
+                // Cooldown: flush delta then re-enable after delay
+                StartCoroutine(ReenableDial(dialCooldown, () =>
+                {
+                    dialManager.lastDelta = 0f; // discard any input during cooldown
+                    dialReady = true;
+                }));
+            }
+
+            yield return null;
+        }
+
+        void UpdateACBackground()
+        {
+            Color targetColor;
+
+            if (currentTemp >= 32)
+            {
+                // neutral → hot (white → red)
+                targetColor = Color.Lerp(Color.black, Color.red, (float)(currentTemp - 32f) / (48f - 32f));
+            }
+            else
+            {
+                // cold → neutral (blue → white)
+                targetColor = Color.Lerp(Color.blue, Color.black, (float)(currentTemp - 16f) / (32f - 16f));
+            }
+
+            StartCoroutine(GradualColorChange(background, targetColor, 0.1f));
+        }
+    }
+
+    public void ResetAC()
+    {
+        dialActive = false;
+        acUI.transform.Find("SpinControl").gameObject.SetActive(false);
+        acUI.transform.Find("Temp").gameObject.SetActive(false);
+        acUI.transform.Find("Degree").gameObject.SetActive(false);
+        acUI.transform.Find("Exit").gameObject.SetActive(false);
+        acUI.SetActive(false);
         Breathing();
     }
 
@@ -388,6 +501,7 @@ public class InteractionManager : MonoBehaviour
 
     void SetEmote()
     {
+        hapticManager.Interrupt();
         UpdateThermalBackground();
         for (int i = 0; i < emotes.Count; i++)
             emotes[i].SetActive(i == emoteIndex);
@@ -458,9 +572,15 @@ public class InteractionManager : MonoBehaviour
             Debug.Log("Home button pressed");
     }
 
+    public void SendEmote()
+    {
+        StartCoroutine(Send());
+    }
+
     public IEnumerator Send()
     {
         dialActive = false;
+        phoneUI.transform.Find("Controls").gameObject.SetActive(false);
         phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(true);
         StartCoroutine(Wiggle(emotes[emoteIndex].GetComponent<RectTransform>()));
         SetEmote();
@@ -474,7 +594,7 @@ public class InteractionManager : MonoBehaviour
         emoteIndex = -1;
         SetEmote();
         phoneUI.transform.Find("Response").Find("Sent").gameObject.SetActive(false);
-        phoneUI.transform.Find("Controls").gameObject.SetActive(false);
+        phoneUI.transform.Find("Response").Find("Intro").gameObject.SetActive(true);
         clockFace.gameObject.SetActive(true);
         StartCoroutine(GradualColorChange(background, Color.black, 0.5f));
         StartCoroutine(EndSession());

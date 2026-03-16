@@ -6,6 +6,7 @@ using System.Collections;
 using System.Net.Sockets;
 using System.Text;
 using TMPro;
+using System;
 
 public class HapticManager : MonoBehaviour
 {
@@ -323,6 +324,41 @@ public class HapticManager : MonoBehaviour
         SendWatchCommands(startTimeDelay, watchCommands);
     }
 
+    public void AC(float setTemp)
+    {
+        PatternInfo pattern = new();
+        List<WatchCommand> watchCommands = new();
+        float time = 0;
+
+        // Thermal
+        float mult = Math.Abs(setTemp - 32f) / 16f;
+        if (setTemp >= 32f)
+        {
+            pattern.thermalPulses.Add(new(0, time, 1, 2f + mult, 1));
+        } else
+        {
+            pattern.thermalPulses.Add(new(0, time, 1, 2f + mult, -1));
+        }
+
+        // Inward - Motion
+        pattern.tactilePulses.Add(new(0, time, 0.3f, 50 + (int)(50 * mult)));
+        pattern.tactilePulses.Add(new(1, time, 0.3f, 50 + (int)(50 * mult)));
+        watchCommands.Add(new(time, 0.3f, 100));
+
+        // Send info
+        pattern.sendTime = GetMasterClockTime();
+        string json = JsonConvert.SerializeObject(pattern, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                FloatFormatHandling = FloatFormatHandling.DefaultValue,
+                FloatParseHandling = FloatParseHandling.Double
+            });
+        Debug.Log(json);
+        communicationManager.SendMessageToPi(json);
+        SendWatchCommands(startTimeDelay, watchCommands);
+
+    }
+ 
     public void Breathing(bool halfBreath = false)
     {
         PatternInfo pattern = new();
@@ -460,7 +496,7 @@ public class HapticManager : MonoBehaviour
         float time = 0;
 
         // Thermal - Hot
-        pattern.thermalPulses.Add(new(0, time, 5.5f, 2.0f, 1));
+        pattern.thermalPulses.Add(new(0, time, 4f, 2.0f, 1));
         //time += preheat_time;
 
         // Inward - Motion
@@ -515,7 +551,7 @@ public class HapticManager : MonoBehaviour
         float time = 0;
 
         // Thermal - Hot
-        pattern.thermalPulses.Add(new(0, time, 5, 1.8f, 1));
+        pattern.thermalPulses.Add(new(0, time, 3f, 1.8f, 1));
         //time += preheat_time;
 
         // Inward - Motion
@@ -560,7 +596,7 @@ public class HapticManager : MonoBehaviour
         float time = 0;
 
         // Thermal - Hot
-        pattern.thermalPulses.Add(new(0, time, 4, 1.6f, 1));
+        pattern.thermalPulses.Add(new(0, time, 2.5f, 1.6f, 1));
         //time += preheat_time;
 
         // Inward - Motion
